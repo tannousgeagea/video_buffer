@@ -1,0 +1,70 @@
+version: '3.3'
+
+services:
+  # core
+  video-buffer-core:
+    image: tannous/tannous:video-buffer-ubuntu.20.04
+    container_name: video-buffer-core
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+    build:
+      context: .
+      args:
+        user: ${user}
+        userid: ${userid}
+        group: ${group}
+        groupid: ${groupid}
+    networks:
+      - internal
+    ports:
+      - ${INET_HTTP_SERVER_PORT}:${INET_HTTP_SERVER_PORT}
+      - ${EVENT_API_PORT}:${EVENT_API_PORT}
+      - ${DJANGO_ADMIN_PORT}:${DJANGO_ADMIN_PORT}
+      - ${FLOWER_PORT}:${FLOWER_PORT}
+      - ${DATA_API_PORT}:${DATA_API_PORT}
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    volumes:
+      - .:/home/$user/src
+      - /media/wasteantadmin/production-data/analytics/alarms/video_buffer:/media
+    user: ${user}
+
+  # RabbitMQ Service
+  rabbitmq:
+    image: "rabbitmq:3-management-alpine"
+    container_name: video-buffer-rabbitmq
+    ports:
+      - "19047:15672"
+    volumes:
+      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq
+      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+    networks:
+      - internal
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_VHOST: "/"
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+  
+  postgres:
+    image: postgres:latest
+    container_name: video-buffer-postgres
+    environment:
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWD}
+      POSTGRES_DB: ${DATABASE_NAME}
+    networks:
+     - internal
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+
+networks:
+  internal:
+    driver: bridge 
+
+volumes:
+  media:
+  postgres_data:

@@ -1,10 +1,16 @@
 from django.db import models
 
+def get_image_path(instance, filename):
+    return f"images/{filename}"
+
+def get_media_path(instance, filename):
+    return f"videos/{filename}"
+
 # Create your models here.
 class Image(models.Model):
     image_id = models.CharField(max_length=255, unique=True)
     image_name = models.CharField(max_length=255)
-    image_file = models.ImageField(upload_to='images/')
+    image_file = models.ImageField(upload_to=get_image_path)
     image_size = models.IntegerField(null=True, blank=True)  # Size in bytes
     image_format = models.CharField(max_length=50, null=True, blank=True)  # JPEG, PNG, etc.
     timestamp = models.DateTimeField()  # Time of capture

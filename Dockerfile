@@ -59,7 +59,7 @@ RUN /bin/bash -c ". /opt/ros/noetic/setup.bash; catkin_init_workspace /home/$use
 RUN /bin/bash -c ". /opt/ros/noetic/setup.bash; cd /home/$user; catkin_make"
 
 RUN /bin/bash -c "echo source /opt/ros/noetic/setup.bash >> /home/$user/.bashrc"
-RUN /bin/bash -c "echo source /home/$user/${init_workspace}/devel/setup.bash >> /home/$user/.bashrc"
+RUN /bin/bash -c "echo source /home/$user/devel/setup.bash >> /home/$user/.bashrc"
 
 RUN /bin/bash -c "chown -R $user:$user /home/$user/"
 RUN /bin/bash -c "chown -R $user:$user /media"

@@ -78,16 +78,22 @@ def get_data(response: Response, video_id:str):
             )
         
         
-        results['data'] = {
+        results = {
             "video": {
                 "title": "Video Sequenz",
-                "items": result,
+                "items": {
+                    "video": {
+                        "title": "Video",
+                        "type": "video",
+                        "data": result,
+                    }
+                }
             }
         }
         
-        results['status_code'] = "ok"
-        results["detail"] = "data retrieved successfully"
-        results["status_description"] = "OK"
+        # results['status_code'] = "ok"
+        # results["detail"] = "data retrieved successfully"
+        # results["status_description"] = "OK"
         
         connection.close()
         

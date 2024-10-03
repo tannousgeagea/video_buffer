@@ -76,7 +76,7 @@ def get_data(
     items_per_page:int=15, 
     page:int=1, 
     metadata_id:int=1
-    ) -> VideoResponse:
+    ):
     results:dict = {}
     try:
         
@@ -124,12 +124,15 @@ def get_data(
             
             rows.append(row.dict())
         
-        return VideoResponse(
+        results = {
+            "data": VideoResponse(
             type='collection',
             total_record=total_record,
             pages=math.ceil(total_record / items_per_page),
             items=rows,
         )
+        }
+        return results
         
         
     except ObjectDoesNotExist as e:

@@ -101,7 +101,7 @@ def get_delivery_metadata(response: Response, language:str="de", metadata_id:int
         language = Language.objects.get(code=language)
         columns = MetadataColumn.objects.filter(metadata_id=metadata_id).select_related('metadata').prefetch_related('localizations')
 
-        col = []
+        col = {}
         for column in columns:
             localization = column.localizations.filter(language=language).first()
             if not localization:
@@ -116,20 +116,16 @@ def get_delivery_metadata(response: Response, language:str="de", metadata_id:int
                 response.status_code = status.HTTP_404_NOT_FOUND
                 return metadata
             
-            col.append(
-                {
-                    column.column_name: {
+            col[column.column_name] = {
                         "title": localization.title,
                         "type": column.type,
                         "description": localization.description                        
                     }
 
-                }
-            )
             
         metadata = {
             "metadata":{
-                "columns": col,
+                "column": col,
                 "primary_key": Metadata.objects.get(id=metadata_id).primary_key,
             }
         }

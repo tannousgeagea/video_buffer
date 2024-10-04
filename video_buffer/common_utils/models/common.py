@@ -4,6 +4,8 @@ import logging
 
 import os
 import cv2
+import uuid
+import hashlib
 import numpy as np
 from typing import Optional, Dict
 from datetime import datetime, timezone
@@ -88,3 +90,8 @@ def get_video(
     except Exception as err:
         logging.error(f"Error saving image: {err}")
         return None
+
+def generate_unique_id():
+    # Generate UUID and hash it to a short 8-digit number
+    unique_id = int(hashlib.sha256(uuid.uuid4().bytes).hexdigest(), 16) % 100000000
+    return unique_id

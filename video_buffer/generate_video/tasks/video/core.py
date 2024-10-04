@@ -12,7 +12,7 @@ from celery import shared_task
 from datetime import datetime, timedelta, timezone
 from common_utils.media.video_utils import generate_video as gen_video
 from common_utils.media.video_utils import get_video_length
-from common_utils.models.common import get_images, get_video
+from common_utils.models.common import get_images, get_video, generate_unique_id
 from database.models import get_media_path
 from django.conf import settings
 
@@ -47,7 +47,7 @@ def generate_video(self, **kwargs):
         # video_path = f"{settings.MEDIA_ROOT}/{}"
         
         video_model = get_video(
-            video_id=str(uuid.uuid4()),
+            video_id=str(generate_unique_id()),
             video_name=video_name,
             timestamp=datetime.now(tz=timezone.utc),
             from_time=from_time,

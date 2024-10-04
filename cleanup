@@ -1,0 +1,1 @@
+*/5 * * * * cd /home/appuser/src/video_buffer && python3 manage.py cleanup_expired_files >> /var/log/cron/cleanup.log 2>&1

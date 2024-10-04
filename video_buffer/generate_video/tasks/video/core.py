@@ -42,12 +42,14 @@ def generate_video(self, **kwargs):
         
         frames = []
         for image in images:
-            frames.append(
-                Annotator(
+            annotator = Annotator(
                     im=cv2.imread(image.image_file.path)
-                ).add_legend(
+                )
+            annotator.add_legend(
                     legend_text=image.timestamp.strftime(DATETIME_FORMAT), font=1, font_scale=1,
-                ).im.data
+                )
+            frames.append(
+                annotator.im.data
             )
             
         video_name = f"gml_tor06_{from_time.strftime('%Y-%m-%d_%H-%M-%S')}_{to_time.strftime('%Y-%m-%d_%H-%M-%S')}.mp4"

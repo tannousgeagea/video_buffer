@@ -1,1 +1,0 @@
-*/2 * * * * source /home/appuser/.bashrc /home/appuser/src/video_buffer && sudo -E python3 manage.py cleanup_expired_files >> /var/log/cron/cleanup.log 2>&1

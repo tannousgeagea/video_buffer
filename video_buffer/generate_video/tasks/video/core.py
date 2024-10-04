@@ -46,7 +46,7 @@ def generate_video(self, **kwargs):
                     im=cv2.imread(image.image_file.path)
                 )
             annotator.add_legend(
-                    legend_text=image.timestamp.strftime(DATETIME_FORMAT), font=1, font_scale=1,
+                    legend_text=image.timestamp.strftime(DATETIME_FORMAT), font=1, font_scale=0.8, font_thickness=2,
                 )
             frames.append(
                 annotator.im.data
@@ -61,7 +61,7 @@ def generate_video(self, **kwargs):
             timestamp=datetime.now(tz=timezone.utc),
             from_time=from_time,
             to_time=to_time,
-            expires_at=(datetime.now(tz=timezone.utc) + timedelta(hours=6)).replace(tzinfo=timezone.utc), 
+            expires_at=(datetime.now(tz=timezone.utc) + timedelta(hours=14)).replace(tzinfo=timezone.utc), 
         )
         
         video_file = get_media_path(video_model, video_name)

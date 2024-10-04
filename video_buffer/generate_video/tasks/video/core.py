@@ -50,7 +50,7 @@ def generate_video(self, **kwargs):
                 ).im.data
             )
             
-        video_name = f"video_{from_time.strftime('%Y-%m-%d_%H-%M-%S')}_{to_time.strftime('%Y-%m-%d_%H-%M-%S')}.mp4"
+        video_name = f"gml_tor06_{from_time.strftime('%Y-%m-%d_%H-%M-%S')}_{to_time.strftime('%Y-%m-%d_%H-%M-%S')}.mp4"
         # video_path = f"{settings.MEDIA_ROOT}/{}"
         
         video_model = get_video(

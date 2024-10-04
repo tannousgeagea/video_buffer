@@ -12,9 +12,12 @@ from celery import shared_task
 from datetime import datetime, timedelta, timezone
 from common_utils.media.video_utils import generate_video as gen_video
 from common_utils.media.video_utils import get_video_length
+from common_utils.annotate.core import Annotator
 from common_utils.models.common import get_images, get_video, generate_unique_id
 from database.models import get_media_path
 from django.conf import settings
+
+DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 @shared_task(bind=True,autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={"max_retries": 5}, ignore_result=True,
              name='generate_video.tasks.video.core.generate_video')
@@ -40,7 +43,11 @@ def generate_video(self, **kwargs):
         frames = []
         for image in images:
             frames.append(
-                cv2.imread(image.image_file.path)
+                Annotator(
+                    im=cv2.imread(image.image_file.path)
+                ).add_legend(
+                    legend_text=image.timestamp.strftime(DATETIME_FORMAT), font=1, font_scale=1,
+                ).im.data
             )
             
         video_name = f"video_{from_time.strftime('%Y-%m-%d_%H-%M-%S')}_{to_time.strftime('%Y-%m-%d_%H-%M-%S')}.mp4"

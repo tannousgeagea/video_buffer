@@ -36,7 +36,7 @@ class BaseConfig:
     CELERY_BEAT_SCHEDULE = {
         'generate-video-5-mins': {
             'task': 'generate_video.tasks.video.core.generate_video',
-            'schedule': crontab(minute="*/5", hour='6-18'),
+            'schedule': crontab(minute="*/5", hour='4-16'),
             'options': {
                 'queue': f'{os.getenv("QUEUE_NAME", "celery")}'
             },

@@ -42,11 +42,12 @@ def generate_video(self, **kwargs):
         
         frames = []
         for image in images:
+            timestamp_str = (image.timestamp + timedelta(hours=2)).strftime(DATETIME_FORMAT)
             annotator = Annotator(
                     im=cv2.imread(image.image_file.path)
                 )
             annotator.add_legend(
-                    legend_text=image.timestamp.strftime(DATETIME_FORMAT), font=1, font_scale=1.5, font_thickness=1,
+                    legend_text=timestamp_str, font=1, font_scale=1.5, font_thickness=1,
                 )
             frames.append(
                 annotator.im.data

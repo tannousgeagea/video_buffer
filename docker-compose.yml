@@ -28,15 +28,12 @@ services:
       - postgres
     volumes:
       - .:/home/$user/src
-      - /media/wasteantadmin/production-data/analytics/alarms/video_buffer:/media
     user: ${user}
 
   # RabbitMQ Service
   rabbitmq:
     image: "rabbitmq:3-management-alpine"
     container_name: video-buffer-rabbitmq
-    ports:
-      - "19047:15672"
     volumes:
       - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq
       - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq

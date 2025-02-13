@@ -17,7 +17,7 @@ from fastapi.routing import APIRoute
 
 django.setup()
 from django.core.exceptions import ObjectDoesNotExist
-from database.models import Video
+from media.models import Video
 
 
 DATE_FORMAT = "%Y-%m-%d"

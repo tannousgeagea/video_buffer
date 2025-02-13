@@ -12,7 +12,7 @@ echo "🔍 Detecting ROS2 Topics..."
 /bin/bash -c "source /opt/ros/$ROS_DISTRO/setup.bash && python3 /home/$user/src/video_buffer/manage.py detect_ros2_topics"
 
 echo "🚀 Starting Supervisor (Django will be available)..."
-sudo -E supervisord -n -c /etc/supervisord.conf &
+sudo -E supervisord -c /etc/supervisord.conf &
 
 # Sleep for a few seconds to ensure Django starts properly
 echo "⏳ Waiting for Django to initialize..."
@@ -28,4 +28,13 @@ echo "✅ App is configured! Proceeding..."
 
 # 🚀 Start delayed services after configuration is complete
 echo "🚀 Starting Core Services..."
-/bin/bash -c "supervisorctl start all"
+/bin/bash -c "supervisorctl start data_acquisition:data_server \
+            generate_video:consumer \
+            generate_video:flower \
+            data_acquisition:data_endpoint \
+            cleanup:cleanup_consumer \
+            generate_video:beat \
+            cleanup:cleanup_beat"
+
+echo "✅ All services started. Keeping container alive..."
+tail -f /dev/null

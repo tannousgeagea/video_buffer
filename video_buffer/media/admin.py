@@ -14,7 +14,7 @@ class ImageAdmin(ModelAdmin):
 
 @admin.register(Video)
 class VideoAdmin(ModelAdmin):
-    list_display = ('video_id', 'video_name', 'video_file', 'created_at', 'start_time', 'end_time', 'expires_at', 'show_video_size')
+    list_display = ('video_id', 'video_file', 'start_time', 'end_time', 'expires_at', 'show_video_size')
     search_fields = ('video_id', 'video_name')
     list_filter = ('created_at', 'expires_at')
 

@@ -1,7 +1,7 @@
 import os
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from database.models import Image, Video
+from media.models import Image, Video
 
 class Command(BaseCommand):
     help = 'Cleans up expired images and videos from storage and database'

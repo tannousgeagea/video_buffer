@@ -63,10 +63,11 @@ def save_image(
         logging.error(f"Error saving image: {err}")
         
 
-def get_images(from_time:datetime, to_time:datetime):
+def get_images(camera_id:int, from_time:datetime, to_time:datetime):
     return Image.objects.filter(
         timestamp__gte=from_time, 
-        timestamp__lt=to_time
+        timestamp__lt=to_time,
+        camera_id=camera_id,
         ).order_by('timestamp')
     
 def get_video(
@@ -76,6 +77,7 @@ def get_video(
     from_time:datetime,
     to_time:datetime,
     expires_at:datetime,
+    camera_id:int,
 ):
     try:
         video = Video(
@@ -85,6 +87,7 @@ def get_video(
             start_time=from_time.replace(tzinfo=timezone.utc),
             end_time=to_time.replace(tzinfo=timezone.utc),
             expires_at=expires_at.replace(tzinfo=timezone.utc),
+            camera_id=camera_id,
         )
         
         return video

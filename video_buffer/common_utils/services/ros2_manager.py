@@ -10,7 +10,9 @@ from datetime import datetime, timezone
 from typing import Optional, Union, List, Dict
 from collections import defaultdict
 import threading
+from common_utils.time.time_tracker import KeepTrackOfTime
 
+keep_track_of_time = KeepTrackOfTime() 
 class ROS2Manager(Node):
     def __init__(
         self, 
@@ -67,6 +69,13 @@ class ROS2Manager(Node):
             logging.info(f"✅ Received message from {topic}")
             self.last_message_time[topic] = time.time()  # Update last received time
 
+            if keep_track_of_time.check_if_time_less_than_diff(
+                start=keep_track_of_time.what_is_the_time,
+                end=time.time(),
+                diff=1,
+            ):
+                return
+
             try:
                 cv_image = self.msg_to_cv2(msg)
                 dt = datetime.now(tz=timezone.utc)
@@ -84,6 +93,8 @@ class ROS2Manager(Node):
                 if self.callback:
                     self.callback(payload)
 
+                keep_track_of_time.update_time()
+                
                 # Reset faulty source counter on success
                 with self.lock:
                     self.faulty_sources[topic] = 0 

@@ -19,12 +19,12 @@ from fastapi.routing import APIRoute
 
 django.setup()
 from django.core.exceptions import ObjectDoesNotExist
-from metadata.models import (
-    Metadata,
-    MetadataColumn,
-    MetadataLocalization,
-    Language,
-)
+# from metadata.models import (
+#     Metadata,
+#     MetadataColumn,
+#     MetadataLocalization,
+#     Language,
+# )
 
 DATE_FORMAT = "%Y-%m-%d"
 TIME_FORMAT = "%H:%M:%S"

@@ -2,10 +2,7 @@ import os
 import rclpy
 import logging
 from common_utils.services.ros2_manager import ROS2Manager
-
-
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
-
 
 def main(params:dict, callback=None):
     # define  a default callback
@@ -17,13 +14,11 @@ def main(params:dict, callback=None):
     try:
         rclpy.init(args=None)
         
-        assert "topics" in params.keys(), f"key: topic not found in params"
-        assert "msg_type" in params.keys(), f"key: msg_type not found in params"
+        assert "sources" in params.keys(), f"key: sources not found in params"
 
         # Create a MultiCameraSubscriber node
         multi_camera_subscriber = ROS2Manager(
-            params['topics'], 
-            msg_type=params["msg_type"],
+            sources=params.get("sources"),
             callback=callback
             )
 

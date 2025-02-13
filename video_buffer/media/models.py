@@ -34,19 +34,20 @@ class Image(models.Model):
 
     
 class Video(models.Model):
-    camera = models.ForeignKey(Camera, on_delete=models.SET_NULL, null=True, blank=True, related_name="images")
+    camera = models.ForeignKey(Camera, on_delete=models.SET_NULL, null=True, blank=True, related_name="videos")
     video_id = models.CharField(max_length=255, unique=True)
     video_name = models.CharField(max_length=255)
-    video_file = models.FileField(upload_to=get_media_path)  # Changed to FileField for videos
-    video_size = models.IntegerField(null=True, blank=True)  # Size in bytes
-    video_format = models.CharField(max_length=50, null=True, blank=True)  # MP4, AVI, etc.
-    timestamp = models.DateTimeField()  # Time when video generation started
+    video_file = models.FileField(upload_to=get_media_path)
+    video_size = models.IntegerField(null=True, blank=True)
+    video_format = models.CharField(max_length=50, null=True, blank=True)
+    timestamp = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
-    start_time = models.DateTimeField(null=True, blank=True)  # Start time of the video content
-    end_time = models.DateTimeField(null=True, blank=True)  # End time of the video content
-    duration = models.DurationField(null=True, blank=True)  # Duration of the video
+    start_time = models.DateTimeField(null=True, blank=True)
+    end_time = models.DateTimeField(null=True, blank=True)
+    duration = models.DurationField(null=True, blank=True)
     meta_info = models.JSONField(null=True, blank=True)
-    expires_at = models.DateTimeField(null=True, blank=True)  # Expiration time for cleanup
+    expires_at = models.DateTimeField(null=True, blank=True)
+    images_used = models.ManyToManyField(Image, related_name="videos")
 
     class Meta:
         db_table = 'video'
@@ -54,5 +55,5 @@ class Video(models.Model):
         verbose_name_plural = "Videos"
 
     def __str__(self) -> str:
-        return f"Video: {self.video_id} created at {self.created_at}"
+        return f"Video {self.video_id} ({self.start_time} - {self.end_time})"
 

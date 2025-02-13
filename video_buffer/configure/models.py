@@ -28,6 +28,7 @@ class DataSource(models.Model):
     interface = models.CharField(max_length=50, choices=INTERFACE_CHOICES) 
     is_available = models.BooleanField(default=False)
     last_detected = models.DateTimeField(auto_now=True)
+    message_type = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return f"{self.name} ({self.get_interface_display()})"

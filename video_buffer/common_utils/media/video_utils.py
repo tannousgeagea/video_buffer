@@ -51,7 +51,6 @@ def generate_video(frames, framerate, video_path, scale=1.):
 def get_video_length(path):
     process = subprocess.Popen(['/usr/bin/ffmpeg', '-i', path], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     stdout, stderr = process.communicate()
-    # Correcting the regex pattern
     matches = re.search(r"Duration:\s(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d+\.\d+)", stdout.decode('utf-8'), re.DOTALL).groupdict()
 
     hours = float(matches['hours'])

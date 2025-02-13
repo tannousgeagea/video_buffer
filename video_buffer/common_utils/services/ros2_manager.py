@@ -4,75 +4,145 @@ import rclpy
 import logging
 import numpy as np
 from rclpy.node import Node
-from sensor_msgs.msg import Image
-from sensor_msgs.msg import CompressedImage
+from sensor_msgs.msg import Image, CompressedImage
 from cv_bridge import CvBridge, CvBridgeError
-from typing import Optional, Union, List, AnyStr
+from datetime import datetime, timezone
+from typing import Optional, Union, List, Dict
+from collections import defaultdict
+import threading
 
 class ROS2Manager(Node):
-    def __init__(self, topics:Optional[Union[List, AnyStr]], msg_type:Optional[Union[List, AnyStr]], callback=None, 
-                 node_name="video_buffer_data_acquisition"):
+    def __init__(
+        self, 
+        sources: List[Dict[str, str]],
+        callback=None, 
+        node_name="video_buffer_data_acquisition",
+        max_retries=3,
+        timeout_seconds=30
+    ):
         super().__init__(node_name)
-        
         self.bridge = CvBridge()
-        
-        if isinstance(topics, str):
-            topics = [topics]
-            
-        if isinstance(msg_type, str):
-            msg_type = [msg_type]
-            
-        assert len(topics) == len(msg_type), f"length of given topics {len(topics)} must be equal length of msg type {len(msg_type)}"        
+        self.callback = callback
+
+        self.faulty_sources = defaultdict(int) 
+        self.last_message_time = {} 
+        self.lock = threading.Lock() 
+        self.timeout_seconds = timeout_seconds
+
+        topics = [source["source_name"] for source in sources if source["source_name"]]
+        msg_types = [source["message_type"] for source in sources if source["message_type"]]
+        camera = [source["camera"] for source in sources if source["camera"]]
+
+        if not topics:
+            logging.warning("⚠️ No valid sources provided. ROS2Manager will not subscribe to any topics.")
+            return
+
+        assert len(topics) == len(msg_types), f"Length of topics ({len(topics)}) must equal length of message types ({len(msg_types)})"        
         
         for i, topic in enumerate(topics):
-            self.create_subscription(
-                self.message_type(msg_type=msg_type[i]),
-                topic, 
-                self.callback_factory(topic, callback), 
-                10
+            msg_type = self.message_type(msg_types[i])
+
+            if msg_type:
+                logging.info(f"📡 Subscribing to {topic} with type {msg_types[i]}")
+                self.create_subscription(
+                    msg_type,
+                    topic, 
+                    self.callback_factory(topic, msg_types[i], camera[i]), 
+                    10
                 )
-            
-    def callback_factory(self, topic, callback=None):
+                self.last_message_time[topic] = time.time()
+            else:
+                logging.warning(f"⚠️ Skipping {topic} due to unsupported message type: {msg_types[i]}")
+        
+        # Start thread to monitor inactive sources
+        self.monitor_thread = threading.Thread(target=self.monitor_inactive_sources, daemon=True)
+        self.monitor_thread.start()
+    
+    def callback_factory(self, topic, msg_type, camera_info):
         """
-        Default Callback to image subscription
+        Generates a callback function for each topic.
+        Handles faulty sources and retries.
         """
         def callback_(msg):
-            logging.info(f"Received message from {topic}")
-            cv_image = self.msg_to_cv2(msg)
-            
-            payload = {
-                "cv_image": cv_image,
-                "img_key": str(time.time()),
-                "timestamp": str(msg.header.stamp.sec + msg.header.stamp.nanosec * 10e-9),
-                "set_name": str(topic),
-            }
+            logging.info(f"✅ Received message from {topic}")
+            self.last_message_time[topic] = time.time()  # Update last received time
 
-            if callback:
-                callback(payload)
-                
-        return callback_
+            try:
+                cv_image = self.msg_to_cv2(msg)
+                dt = datetime.now(tz=timezone.utc)
+
+                payload = {
+                    "cv_image": cv_image,
+                    "img_key": str(time.time()),
+                    "timestamp": str(msg.header.stamp.sec + msg.header.stamp.nanosec * 10e-9),
+                    "set_name": str(topic),
+                    "datetime": dt.strftime("%Y-%m-%d %H:%M:%S"),
+                    "filename": dt.strftime("%Y-%m-%d_%H-%M-%S") + '.jpg',
+                    "camera": camera_info,
+                }
+
+                if self.callback:
+                    self.callback(payload)
+
+                # Reset faulty source counter on success
+                with self.lock:
+                    self.faulty_sources[topic] = 0 
+
+            except Exception as err:
+                with self.lock:
+                    self.faulty_sources[topic] += 1
+
+                retry_count = self.faulty_sources[topic]
+                if retry_count <= 3:
+                    logging.error(f"❌ Error processing message from {topic}. Retry {retry_count}/3: {err}")
+                else:
+                    logging.error(f"⛔ Too many failures for {topic}. Disabling further processing.")
         
+        return callback_
+
     def message_type(self, msg_type):
+        """
+        Returns the correct ROS2 message type.
+        """
         try:
-            if msg_type=="image":
+            if msg_type == "sensor_msgs/msg/Image":
                 return Image
-            elif msg_type=="compressed_image":
+            elif msg_type == "sensor_msgs/msg/CompressedImage":
                 return CompressedImage
             else:
-                raise ValueError(f"msg type {msg_type} not supported")
+                logging.error(f"❌ Unsupported message type: {msg_type}")
+                return None
         except Exception as err:
-            raise ValueError(f"Failed to map message type ros sensor messgae: {err}")
-
+            logging.error(f"❌ Error mapping message type: {err}")
+            return None
 
     def msg_to_cv2(self, msg):
+        """
+        Converts a ROS2 message to an OpenCV image.
+        """
         try:
-            if type(msg) == Image:
+            if isinstance(msg, Image):
                 return self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
-            elif type(msg) == CompressedImage:
+            elif isinstance(msg, CompressedImage):
                 return self.bridge.compressed_imgmsg_to_cv2(msg)
             else:
-                raise ValueError(f"Failed to decode image msg to cv2 image: {type(msg)} not supported")
-        except Exception as err:
-            raise ValueError(f"Failed to encode img msg to cv2: {err}")
+                raise ValueError(f"❌ Unsupported message format: {type(msg)}")
         except CvBridgeError as err:
-            raise CvBridgeError(f"Failed to encode img to cv2 {err}")
+            raise CvBridgeError(f"❌ CvBridge error converting image: {err}")
+        except Exception as err:
+            raise ValueError(f"❌ Unknown error converting image: {err}")
+
+    def monitor_inactive_sources(self):
+        """
+        Periodically checks if any source has been inactive beyond `timeout_seconds`.
+        If a source hasn't sent data, it's considered inactive.
+        """
+        while rclpy.ok():
+            with self.lock:
+                current_time = time.time()
+                for topic, last_time in self.last_message_time.items():
+                    if (current_time - last_time) > self.timeout_seconds:
+                        logging.warning(f"⚠️ No messages received from {topic} in the last {self.timeout_seconds} seconds. Marking as inactive.")
+                        self.last_message_time[topic] = current_time  # Reset to avoid duplicate warnings
+            
+            time.sleep(10)  # Check every 10 seconds

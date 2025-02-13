@@ -11,10 +11,11 @@ from typing import Optional, Dict
 from datetime import datetime, timezone
 from django.conf import settings
 
-from database.models import (
+from media.models import (
     Image, Video, get_image_path
 )
 
+from tenants.models import Camera
 
 def save_image(
     cv_image:np.ndarray,
@@ -22,13 +23,13 @@ def save_image(
     image_name:str,
     timestamp:datetime,
     expires_at:datetime,
+    camera_info:Dict,
     image_size:Optional[str]=None,
     image_format:Optional[str]=None,
     meta_info:Optional[Dict]=None,
-    source:Optional[str]=None,
 ):
     try:
-        
+
         image = Image(
             image_id=image_id,
             image_name=image_name,
@@ -37,7 +38,8 @@ def save_image(
             image_size=image_size,
             image_format=image_format,
             meta_info=meta_info,
-            source=source
+            camera_id=int(camera_info.get('id')),
+            
         )
         
         image_file = get_image_path(image, filename=image_name)

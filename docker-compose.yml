@@ -26,8 +26,11 @@ services:
     restart: unless-stopped
     depends_on:
       - postgres
+      - rabbitmq
+      - ros2_bag
     volumes:
       - .:/home/$user/src
+      - /home/tannous/Desktop/ros2_bags:/media
     user: ${user}
 
   # RabbitMQ Service
@@ -52,11 +55,20 @@ services:
       POSTGRES_USER: ${DATABASE_USER}
       POSTGRES_PASSWORD: ${DATABASE_PASSWD}
       POSTGRES_DB: ${DATABASE_NAME}
+    restart: unless-stopped
     networks:
      - internal
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
+  
+  ros2_bag:
+    image: tannous/tannous:ros2-humble-player
+    container_name: ros2_bag_player
+    stdin_open: true
+    tty: true
+    networks: 
+      - internal
+    command: ["ros2", "bag", "play", "/rosbags/rosbag2_2025_02_12-09_23_51/rosbag2_2025_02_12-09_23_51_0.db3", '--loop']
 
 networks:
   internal:

@@ -12,6 +12,9 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 import os
 from pathlib import Path
+from django.templatetags.static import static
+from django.urls import reverse_lazy
+from django.utils.translation import gettext_lazy as _
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -42,6 +45,8 @@ INSTALLED_APPS = [
     'users',
     'tenants',
     'metadata',
+    'configure',
+    'media',
 ]
 
 MIDDLEWARE = [
@@ -134,3 +139,154 @@ MEDIA_ROOT = "/media"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+UNFOLD = {
+    "SITE_HEADER": _("Video Archive App"),
+    "SITE_TITLE": _("Video Archive"),
+    "SITE_SYMBOL": "switch_video",
+    # "SITE_LOGO": {
+    #     "light": lambda r: static("wa-logo-green.png"),  # light mode
+    #     "dark": lambda r: static("wa-logo-white.png"),  # dark mode
+    # },
+    # "LOGIN": {
+    #     "image": lambda r: static("login-bg.png"),
+    #     # "redirect_after": lambda r: reverse_lazy("admin:APP_MODEL_changelist"),
+    # },
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": True,
+        "navigation": [
+            {
+                "title": _("Navigation"),
+                "items": [
+                    {
+                        "title": _("All Apps"),
+                        "icon": "dashboard",
+                        "link": reverse_lazy("admin:index"),
+                    },
+                ]
+            },
+            {
+                "title": _("Tenants"),
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Tenant"),
+                        "icon": 'tenancy',
+                        "link": reverse_lazy(
+                            "admin:tenants_tenant_changelist"
+                        ),
+                    },
+                    {
+                        "title": _("Entity"),
+                        "icon": 'fingerprint',
+                        "link": reverse_lazy(
+                            "admin:tenants_entitytype_changelist"
+                        ),
+                    },
+                    {
+                        "title": _("Tenant Entity"),
+                        "icon": 'type_specimen',
+                        "link": reverse_lazy(
+                            "admin:tenants_plantentity_changelist"
+                        ),
+                    },
+                    {
+                        "title": _("SensorBoxes"),
+                        "icon": 'sensors',
+                        "link": reverse_lazy(
+                            "admin:tenants_sensorbox_changelist"
+                        ),
+                    },
+                    {
+                        "title": _("Cameras"),
+                        "icon": 'videocam',
+                        "link": reverse_lazy(
+                            "admin:tenants_camera_changelist"
+                        ),
+                    },
+                ]
+            },
+            {
+                "title": _("Users & Groups"),
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Users"),
+                        "icon": "person",
+                        "link": reverse_lazy(
+                            "admin:users_customuser_changelist"
+                            ),
+                    },
+                    {
+                        "title": _("Groups"),
+                        "icon": "group",
+                        "link": reverse_lazy(
+                            "admin:auth_group_changelist"
+                            ),
+                    }
+                ],
+            },
+            {
+                "title": _("Configuration"),
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("App config"),
+                        "icon": 'settings',
+                        "link": reverse_lazy(
+                            "admin:configure_appconfig_changelist"
+                        ),
+                    },
+                    {
+                        "title": _("Data Sources"),
+                        "icon": 'frame_source',
+                        "link": reverse_lazy(
+                            "admin:configure_datasource_changelist"
+                        ),
+                    },
+                    {
+                        "title": _("Data Aquicistion Config"),
+                        "icon": 'topic',
+                        "link": reverse_lazy(
+                            "admin:configure_dataacquisitionconfig_changelist"
+                        ),
+                    },
+                ]
+            },
+            {
+                "title": _("MetaData"),
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Languages"),
+                        "icon": "language",
+                        "link": reverse_lazy(
+                            "admin:metadata_language_changelist"
+                        ),
+                    },
+                ],
+            },
+            {
+                "title": _("Media"),
+                "collapsible": True,
+                "items": [
+                    {
+                        "title": _("Images"),
+                        "icon": "image",
+                        "link": reverse_lazy(
+                            "admin:media_image_changelist"
+                        ),
+                    },
+                    {
+                        "title": _("Videos"),
+                        "icon": "play_arrow",
+                        "link": reverse_lazy(
+                            "admin:media_video_changelist"
+                        ),
+                    },
+                ],
+            },
+        ],
+    },
+}

@@ -20,6 +20,7 @@ def run(payload):
             assert 'cv_image' in payload.keys(), f"key: cv_image not found in payload"
             assert 'img_key' in payload.keys(), f"key: img_key not found in payload"
             assert 'set_name' in payload.keys(), f"key: set_name not found in payload"
+            assert 'camera' in payload.keys(), f"key: camera not found in payload"
             
             if not(len(payload)):
                 return
@@ -27,6 +28,7 @@ def run(payload):
             cv_image = payload["cv_image"]
             img_key = payload["img_key"]
             set_name = payload["set_name"]
+            camera_info=payload['camera']
             dt = datetime.now(tz=timezone.utc)
             
             save_image(
@@ -36,7 +38,7 @@ def run(payload):
                 image_format=os.path.basename(payload['filename']).split('.')[-1],
                 timestamp=dt,
                 expires_at=(dt + timedelta(minutes=15)),
-                source=set_name,
+                camera_info=camera_info
             )
             
             signal = {key: value for key, value in payload.items() if key!='cv_image'}

@@ -54,7 +54,6 @@ def generate_video(self, **kwargs):
             )
             
         video_name = f"gml_tor06_{from_time.strftime('%Y-%m-%d_%H-%M-%S')}_{to_time.strftime('%Y-%m-%d_%H-%M-%S')}.mp4"
-        # video_path = f"{settings.MEDIA_ROOT}/{}"
         
         video_model = get_video(
             video_id=str(generate_unique_id()),

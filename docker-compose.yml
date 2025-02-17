@@ -16,6 +16,7 @@ services:
         groupid: ${groupid}
     networks:
       - internal
+      - edge_cloud_sync_external
     ports:
       - ${INET_HTTP_SERVER_PORT}:${INET_HTTP_SERVER_PORT}
       - ${EVENT_API_PORT}:${EVENT_API_PORT}
@@ -74,7 +75,9 @@ services:
 
 networks:
   internal:
-    driver: bridge 
+    driver: bridge
+  edge_cloud_sync_external:
+    external: true
 
 volumes:
   media:

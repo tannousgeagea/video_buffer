@@ -3,7 +3,7 @@ import cv2
 import uuid
 import django
 django.setup()
-
+import json
 import time
 import logging
 import numpy as np
@@ -18,6 +18,7 @@ from configure.client import ConfigManager
 from media.models import get_media_path
 from django.conf import settings
 
+from common_utils.media.edge_to_cloud import sync
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -44,7 +45,7 @@ def generate_video(self, camera_id, **kwargs):
 
         frames = []
         for image in images:
-            timestamp_str = (image.timestamp + timedelta(hours=2)).strftime(DATETIME_FORMAT)
+            timestamp_str = (image.timestamp + timedelta(hours=1)).strftime(DATETIME_FORMAT)
             annotator = Annotator(
                     im=cv2.imread(image.image_file.path)
                 )
@@ -102,6 +103,34 @@ def generate_video(self, camera_id, **kwargs):
         video_model.video_file = video_file
         video_model.save()
         
+
+        sync(
+            url=f"http://{os.getenv('EDGE_CLOUD_SYNC_HOST', '0.0.0.0')}:{os.getenv('EDGE_CLOUD_SYNC_PORT', '27092')}/api/v1/event/media",
+            media_file=f"{video_model.video_file.path}",
+            params={   
+                'event_id': video_model.video_id,
+                'source_id': "video-archive",
+                'blob_name': os.path.basename(video_model.video_file.path),
+                'container_name': "video_archive",
+                'target': "video_archive",
+                'data': json.dumps(
+                    {
+                        "tenant_domain": tenant.domain,
+                        "location": entity.entity_uid,
+                        "sensor_box_location": camera.sensor_box.sensor_box_location,
+                        "camera_id": camera.camera_id,
+                        "video_id": video_model.video_id,
+                        "media_id": video_model.video_id,
+                        "media_name": video_model.video_name,
+                        "media_url": video_model.video_file.url,
+                        "media_type": "video",
+                        "start_time": video_model.start_time.strftime(DATETIME_FORMAT),
+                        "end_time": video_model.end_time.strftime(DATETIME_FORMAT),
+                    }
+                )
+            },
+        )
+
         data = {
             "action": "done",
             "time": datetime.now().strftime("%Y-%m-%d %H-%M-%S")

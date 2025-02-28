@@ -78,6 +78,9 @@ class ROS2Manager(Node):
 
             try:
                 cv_image = self.msg_to_cv2(msg)
+                h0, w0, _ = cv_image.shape
+
+                cv_image = cv2.resize(cv_image, (int(w0 / 4), int(h0 / 4)))
                 dt = datetime.now(tz=timezone.utc)
 
                 payload = {

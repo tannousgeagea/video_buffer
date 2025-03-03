@@ -37,7 +37,7 @@ def run(payload):
                 image_name=f"{payload['filename']}",
                 image_format=os.path.basename(payload['filename']).split('.')[-1],
                 timestamp=dt,
-                expires_at=(dt + timedelta(minutes=15)),
+                expires_at=(dt + timedelta(minutes=25)),
                 camera_info=camera_info
             )
             

@@ -27,7 +27,7 @@ DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 def generate_video(self, camera_id, **kwargs):
     try:
         now = datetime.now(tz=timezone.utc)
-        from_time = now - timedelta(minutes=5)
+        from_time = now - timedelta(minutes=15)
         to_time = now
         
         images = get_images(
@@ -72,13 +72,10 @@ def generate_video(self, camera_id, **kwargs):
             timestamp=datetime.now(tz=timezone.utc),
             from_time=from_time,
             to_time=to_time,
-            expires_at=(datetime.now(tz=timezone.utc) + timedelta(hours=14)).replace(tzinfo=timezone.utc),
+            expires_at=(datetime.now(tz=timezone.utc) + timedelta(hours=6)).replace(tzinfo=timezone.utc),
             camera_id=camera_id,
         )
         
-
-        print(video_name)
-        print(video_model)
         video_file = get_media_path(video_model, video_name)
         if not os.path.exists(
             os.path.dirname(

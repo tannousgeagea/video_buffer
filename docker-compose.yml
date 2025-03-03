@@ -16,7 +16,6 @@ services:
         groupid: ${groupid}
     networks:
       - internal
-      - edge_cloud_sync_external
     ports:
       - ${INET_HTTP_SERVER_PORT}:${INET_HTTP_SERVER_PORT}
       - ${EVENT_API_PORT}:${EVENT_API_PORT}
@@ -43,8 +42,6 @@ services:
       - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
     networks:
       - internal
-    ports:
-      - 15672:15672
     restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_VHOST: "/"
@@ -76,8 +73,6 @@ services:
 networks:
   internal:
     driver: bridge
-  edge_cloud_sync_external:
-    external: true
 
 volumes:
   media:

@@ -220,11 +220,11 @@ class Annotator(Colors):
         # Create a rectangle for the legend background
         legend_rect_start = position
         legend_rect_end = (position[0] + text_size[0] + 10, position[1] - text_size[1] - 10)
-        cv2.rectangle(self.im.data, legend_rect_start, legend_rect_end, legend_color, cv2.FILLED)
+        # cv2.rectangle(self.im.data, legend_rect_start, legend_rect_end, legend_color, cv2.FILLED)
 
         # Put the legend text on the image
         cv2.putText(self.im.data, legend_text, (position[0] + 5, position[1] - 5),
-                    font, font_scale, (0, 0, 0), font_thickness)
+                    font, font_scale, (255, 255, 255), font_thickness)
 
 
 

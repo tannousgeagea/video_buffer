@@ -44,21 +44,21 @@ def generate_video(self, camera_id, **kwargs):
             return data
 
         frames = []
+        camera = images.first().camera
+        tenant = camera.sensor_box.plant_entity.entity_type.tenant
+        entity = camera.sensor_box.plant_entity
         for image in images:
-            timestamp_str = (image.timestamp + timedelta(hours=1)).strftime(DATETIME_FORMAT)
+            timestamp_str = (image.timestamp + timedelta(hours=1)).strftime(DATETIME_FORMAT) + f" | {entity.description}"
             annotator = Annotator(
                     im=cv2.imread(image.image_file.path)
                 )
             annotator.add_legend(
-                    legend_text=timestamp_str, font=1, font_scale=1.5, font_thickness=1,
+                    legend_text=timestamp_str, font=1, font_scale=1, font_thickness=1,
                 )
             frames.append(
                 annotator.im.data
             )
             
-        camera = images.first().camera
-        tenant = camera.sensor_box.plant_entity.entity_type.tenant
-        entity = camera.sensor_box.plant_entity
         video_name = (
             f"{tenant.tenant_name}_"
             f"{entity.entity_uid}_"

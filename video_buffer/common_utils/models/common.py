@@ -10,6 +10,7 @@ import numpy as np
 from typing import Optional, Dict
 from datetime import datetime, timezone
 from django.conf import settings
+from common_utils.media.image_utils import store_image
 
 from media.models import (
     Image, Video, get_image_path
@@ -41,8 +42,9 @@ def save_image(
             camera_id=int(camera_info.get('id')),
             
         )
-        
-        image_file = get_image_path(image, filename=image_name)
+
+        image_name = f"{image.camera.camera_id}_{image.camera.camera_position}_{image_name}"
+        image_file = get_image_path(image, filename=f"{image_name}")
         image_path = f"{settings.MEDIA_ROOT}/{image_file}"
         
         print(image_path)
@@ -53,8 +55,13 @@ def save_image(
                 os.path.dirname(image_path)
             )
             
-        
-        cv2.imwrite(image_path, cv_image)
+        # cv2.imwrite(image_path, cv_image)
+        image_path = store_image(
+            output_dir=os.path.dirname(image_path),
+            file_name_prefix=os.path.basename(image_path),
+            cv_image=cv_image,
+            quality=60,
+        )
         image.image_file = image_file
         image.save()
         

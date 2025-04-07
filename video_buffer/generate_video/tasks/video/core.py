@@ -48,7 +48,7 @@ def generate_video(self, camera_id, **kwargs):
         tenant = camera.sensor_box.plant_entity.entity_type.tenant
         entity = camera.sensor_box.plant_entity
         for image in images:
-            timestamp_str = (image.timestamp + timedelta(hours=1)).strftime(DATETIME_FORMAT) + f" | {entity.description}"
+            timestamp_str = (image.timestamp + timedelta(hours=2)).strftime(DATETIME_FORMAT) + f" | {entity.description}"
             annotator = Annotator(
                     im=cv2.imread(image.image_file.path)
                 )
@@ -91,7 +91,7 @@ def generate_video(self, camera_id, **kwargs):
         gen_video(
             frames=frames,
             video_path=f"{settings.MEDIA_ROOT}/{video_file}",
-            framerate=5,
+            framerate=3,
         )
         
         video_model.video_size = os.stat(f"{settings.MEDIA_ROOT}/{video_file}").st_size

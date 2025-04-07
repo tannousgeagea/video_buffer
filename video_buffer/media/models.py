@@ -4,7 +4,7 @@ from tenants.models import (
 )
 
 def get_image_path(instance, filename):
-    return f"images/{filename}"
+    return f"images/{instance.camera_id}/{filename}"
 
 def get_media_path(instance, filename):
     return f"videos/{filename}"

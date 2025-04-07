@@ -4,21 +4,23 @@ import logging
 import subprocess
 from PIL import Image
 from decimal import Decimal
+from common_utils.media.image_utils import compress_image
 
 def create_video_from_frames(output_filename, width, height, framerate=24):
     command = [
         'ffmpeg',
         '-y',  # Overwrite output file if it exists
-        '-f', 'rawvideo',  # Input format
-        '-vcodec', 'rawvideo',
+        '-f', 'rawvideo',
         '-s', f'{width}x{height}',  # Size of one frame
         '-pix_fmt', 'rgb24',
         '-r', str(framerate),  # Framerate
         '-i', '-',  # The input comes from a pipe
         '-an',  # No audio
         '-vcodec', 'libx264',  # Use H.264 codec
+        '-preset', 'slow',
+        '-crf', '23',
         '-pix_fmt', 'yuv420p',  # Pixel format for compatibility
-        '-b:v', '7000k',  # Bitrate
+        # '-b:v', '7000k',  # Bitrate
         '-movflags', '+faststart',  # Fast start for MP4 files
         output_filename
     ]
@@ -58,3 +60,25 @@ def get_video_length(path):
     seconds =float(matches['seconds'])
 
     return hours, minutes, seconds
+
+
+if __name__ == "__main__":
+    from datetime import datetime, timezone, timedelta
+    from common_utils.models.common import get_images
+    now = datetime.now(tz=timezone.utc)
+    from_time = now - timedelta(minutes=15)
+    to_time = now
+    
+    images = get_images(
+        from_time=from_time, to_time=to_time, camera_id=1
+    )
+
+    frames = []
+    for image in images:
+        frames.append(cv2.imread(image.image_file.path))
+
+    generate_video(
+    frames=frames,
+    video_path=f"/media/videos/test.mp4",
+    framerate=5,
+)

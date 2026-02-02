@@ -1,5 +1,6 @@
 import os
 import celery
+from dataclasses import dataclass
 from functools import lru_cache
 from kombu import Queue
 from generate_video import tasks
@@ -15,6 +16,20 @@ def route_task(name, args, kwargs, options, task=None, **kw):
 
 RABBITMQ_HOST = os.getenv('RABBITMQ_HOST', 'localhost')
 RABBITMQ_PORT = os.getenv("RABBITMQ_PORT", '5672')
+
+@dataclass(frozen=True)
+class VideoArchiveScheduleConfig:
+    minute: str = os.getenv("CELERY_VIDEO_MINUTE", "*/15")
+    hour: str | None = os.getenv("CELERY_VIDEO_HOUR")
+
+
+VIDEO_SCHEDULE = VideoArchiveScheduleConfig()
+
+def build_video_schedule():
+    # 24x7 if hour not provided
+    if VIDEO_SCHEDULE.hour:
+        return crontab(minute=VIDEO_SCHEDULE.minute, hour=VIDEO_SCHEDULE.hour)
+    return crontab(minute=VIDEO_SCHEDULE.minute)
 
 class BaseConfig:
     CELERY_BROKER_URL: str = os.environ.get("CELERY_BROKER_URL", f"amqp://guest:guest@{RABBITMQ_HOST}:{RABBITMQ_PORT}//")
@@ -36,7 +51,7 @@ class BaseConfig:
     CELERY_BEAT_SCHEDULE = {
         'generate-video-5-mins': {
             'task': 'generate_video.tasks.video.core.generate_video_for_available_source',
-            'schedule': crontab(minute="*/15", hour='4-16'),
+            "schedule": build_video_schedule(),
             # 'options': {
             #     'queue': f'{os.getenv("QUEUE_NAME", "celery")}'
             # },

@@ -1,5 +1,6 @@
 import os
 import cv2
+import pytz
 import uuid
 import django
 django.setup()
@@ -46,9 +47,10 @@ def generate_video(self, camera_id, **kwargs):
         frames = []
         camera = images.first().camera
         tenant = camera.sensor_box.plant_entity.entity_type.tenant
+        tenant_tz = pytz.timezone(tenant.timezone)
         entity = camera.sensor_box.plant_entity
         for image in images:
-            timestamp_str = (image.timestamp + timedelta(hours=2)).strftime(DATETIME_FORMAT) + f" | {entity.description}"
+            timestamp_str = image.timestamp.astimezone(tenant_tz).strftime(DATETIME_FORMAT) + f" | {entity.description}"
             annotator = Annotator(
                     im=cv2.imread(image.image_file.path)
                 )

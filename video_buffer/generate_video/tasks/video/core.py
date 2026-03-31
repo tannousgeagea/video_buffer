@@ -54,14 +54,20 @@ def generate_video(self, camera_id, **kwargs):
             annotator = Annotator(
                     im=cv2.imread(image.image_file.path)
                 )
+            
+            bg_color = (
+                int(os.getenv("TIMESTAMP_BG_COLOR_R", 0)),
+                int(os.getenv("TIMESTAMP_BG_COLOR_G", 0)),
+                int(os.getenv("TIMESTAMP_BG_COLOR_B", 0)),
+            )
             annotator.add_legendV2(
                     legend_text=timestamp_str, 
                     font=1, 
                     font_scale=1, 
                     font_thickness=1,
-                    pos="top-left",
-                    bg_color=(0, 0, 0),
-                    alpha=0.6,
+                    pos=os.getenv("TIMESTAMP_POSITION", "top-left"),
+                    bg_color=bg_color,
+                    alpha=os.getenv("TIMESTAMP_BG_ALPHA", 0.6),
                 )
             
             frames.append(

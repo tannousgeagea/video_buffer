@@ -1,3 +1,5 @@
+
+import os
 import cv2
 import time
 import rclpy
@@ -31,6 +33,7 @@ class ROS2Manager(Node):
         self.lock = threading.Lock() 
         self.timeout_seconds = timeout_seconds
 
+        self.scale = float(os.getenv("ROS2_IMAGE_SCALE", 0.25))
         topics = [source["source_name"] for source in sources if source["source_name"]]
         msg_types = [source["message_type"] for source in sources if source["message_type"]]
         camera = [source["camera"] for source in sources if source["camera"]]
@@ -80,7 +83,7 @@ class ROS2Manager(Node):
                 cv_image = self.msg_to_cv2(msg)
                 h0, w0, _ = cv_image.shape
 
-                cv_image = cv2.resize(cv_image, (int(w0 / 4), int(h0 / 4)))
+                cv_image = cv2.resize(cv_image, (int(w0 * self.scale), int(h0 * self.scale)))
                 dt = datetime.now(tz=timezone.utc)
 
                 payload = {

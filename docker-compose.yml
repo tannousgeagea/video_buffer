@@ -27,7 +27,6 @@ services:
     depends_on:
       - postgres
       - rabbitmq
-      - ros2_bag
     volumes:
       - .:/home/$user/src
       - /home/tannous/Desktop/ros2_bags:/media
@@ -61,16 +60,16 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
   
-  ros2_bag:
-    image: tannousgeagea/ros2:humble-desktop
-    container_name: ros2_bag_player
-    stdin_open: true
-    tty: true
-    networks: 
-      - internal
-    volumes:
-      - /home/tannous/Downloads/rosbag2_2025_03_04-09_51_15:/rosbags
-    command: ["ros2", "bag", "play", "/rosbags/rosbag2_2025_03_04-09_51_15_0.db3", '--loop']
+  # ros2_bag:
+  #   image: tannousgeagea/ros2:humble-desktop
+  #   container_name: ros2_bag_player
+  #   stdin_open: true
+  #   tty: true
+  #   networks: 
+  #     - internal
+  #   volumes:
+  #     - /home/tannous/Downloads/rosbag2_2025_03_04-09_51_15:/rosbags
+  #   command: ["ros2", "bag", "play", "/rosbags/rosbag2_2025_03_04-09_51_15_0.db3", '--loop']
 
 networks:
   internal:

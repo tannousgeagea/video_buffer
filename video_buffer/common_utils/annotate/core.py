@@ -204,7 +204,15 @@ class Annotator(Colors):
             p1 = (p1[0], p1[1] + h + 10)
 
 
-    def add_legend(self, legend_text, font=cv2.FONT_HERSHEY_SIMPLEX, font_scale=2, font_thickness=3, legend_color=(255, 255, 255), pos='buttom-left'):
+    def add_legend(
+        self, 
+        legend_text, 
+        font=cv2.FONT_HERSHEY_SIMPLEX, 
+        font_scale=2, 
+        font_thickness=3, 
+        legend_color=(255, 255, 255), 
+        pos='buttom-left'
+    ):
 
         # Get the size of the legend text
         text_size = cv2.getTextSize(legend_text, font, font_scale, font_thickness)[0]
@@ -226,6 +234,92 @@ class Annotator(Colors):
         cv2.putText(self.im.data, legend_text, (position[0] + 5, position[1] - 5),
                     font, font_scale, (255, 255, 255), font_thickness)
 
+
+    def add_legendV2(
+        self,
+        legend_text,
+        font=cv2.FONT_HERSHEY_SIMPLEX,
+        font_scale=1,
+        font_thickness=2,
+        text_color=(255, 255, 255),
+        bg_color=(0, 0, 0),
+        alpha=0.6,
+        padding=8,
+        pos="bottom-left"
+    ):
+        """
+        Add timestamp/legend text with flexible positioning and optional background.
+
+        pos options:
+            - top-left
+            - top-right
+            - bottom-left
+            - bottom-right
+        """
+
+        img = self.im.data
+        h, w = img.shape[:2]
+
+        # Get text size
+        (text_w, text_h), baseline = cv2.getTextSize(
+            legend_text, font, font_scale, font_thickness
+        )
+
+        # Compute positions
+        if pos == "top-left":
+            x = padding
+            y = padding + text_h
+
+        elif pos == "top-right":
+            x = w - text_w - padding
+            y = padding + text_h
+
+        elif pos == "bottom-left":
+            x = padding
+            y = h - padding
+
+        elif pos == "bottom-right":
+            x = w - text_w - padding
+            y = h - padding
+
+        else:
+            raise ValueError(f"Invalid position: {pos}")
+
+        # Background rectangle coords
+        rect_x1 = x - padding
+        rect_y1 = y - text_h - padding
+        rect_x2 = x + text_w + padding
+        rect_y2 = y + padding
+
+        # Clip to image bounds (safe)
+        rect_x1 = max(rect_x1, 0)
+        rect_y1 = max(rect_y1, 0)
+        rect_x2 = min(rect_x2, w)
+        rect_y2 = min(rect_y2, h)
+
+        # Draw background with transparency
+        if bg_color is not None:
+            overlay = img.copy()
+            cv2.rectangle(
+                overlay,
+                (rect_x1, rect_y1),
+                (rect_x2, rect_y2),
+                bg_color,
+                -1
+            )
+            cv2.addWeighted(overlay, alpha, img, 1 - alpha, 0, img)
+
+        # Draw text
+        cv2.putText(
+            img,
+            legend_text,
+            (x, y - 2),
+            font,
+            font_scale,
+            text_color,
+            font_thickness,
+            cv2.LINE_AA,
+        )
 
 
 class Image:

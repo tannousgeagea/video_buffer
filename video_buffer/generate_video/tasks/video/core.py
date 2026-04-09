@@ -20,6 +20,7 @@ from media.models import get_media_path
 from django.conf import settings
 
 from common_utils.media.edge_to_cloud import sync
+from media.services.recording_service import VideoRecordingService
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -43,105 +44,170 @@ def generate_video(self, camera_id, **kwargs):
             }
             
             return data
+        
+        # ------------------------------------------------------------------
+        # Tenant / entity context
+        # ------------------------------------------------------------------
+        camera     = images.first().camera
+        tenant     = camera.sensor_box.plant_entity.entity_type.tenant
+        tenant_tz  = pytz.timezone(tenant.timezone)
+        entity     = camera.sensor_box.plant_entity
 
-        frames = []
-        camera = images.first().camera
-        tenant = camera.sensor_box.plant_entity.entity_type.tenant
-        tenant_tz = pytz.timezone(tenant.timezone)
-        entity = camera.sensor_box.plant_entity
+        # ------------------------------------------------------------------
+        # Annotate frames — preserve timestamps on each frame as before
+        # ------------------------------------------------------------------
+        annotated_frames = []
         for image in images:
-            timestamp_str = image.timestamp.astimezone(tenant_tz).strftime(DATETIME_FORMAT) + f" | {entity.description}"
-            annotator = Annotator(
-                    im=cv2.imread(image.image_file.path)
-                )
-            
-            bg_color = (
-                int(os.getenv("TIMESTAMP_BG_COLOR_R", 0)),
-                int(os.getenv("TIMESTAMP_BG_COLOR_G", 0)),
-                int(os.getenv("TIMESTAMP_BG_COLOR_B", 0)),
+            timestamp_str = (
+                image.timestamp.astimezone(tenant_tz).strftime(DATETIME_FORMAT)
+                + f" | {entity.description}"
             )
+            annotator = Annotator(im=cv2.imread(image.image_file.path))
             annotator.add_legendV2(
-                    legend_text=timestamp_str, 
-                    font=1, 
-                    font_scale=1, 
-                    font_thickness=1,
-                    pos=os.getenv("TIMESTAMP_POSITION", "top-left"),
-                    bg_color=bg_color,
-                    alpha=os.getenv("TIMESTAMP_BG_ALPHA", 0.6),
-                )
-            
-            frames.append(
-                annotator.im.data
+                legend_text=timestamp_str,
+                font=1,
+                font_scale=1,
+                font_thickness=1,
+                pos=os.getenv("TIMESTAMP_POSITION", "top-left"),
+                bg_color=(
+                    int(os.getenv("TIMESTAMP_BG_COLOR_R", 0)),
+                    int(os.getenv("TIMESTAMP_BG_COLOR_G", 0)),
+                    int(os.getenv("TIMESTAMP_BG_COLOR_B", 0)),
+                ),
+                alpha=float(os.getenv("TIMESTAMP_BG_ALPHA", 0.6)),
             )
-            
+            annotated_frames.append(annotator.im.data)
+
+        # ------------------------------------------------------------------
+        # Build video name (same convention as before)
+        # ------------------------------------------------------------------
         video_name = (
             f"{tenant.tenant_name}_"
             f"{entity.entity_uid}_"
             f"{camera.camera_position}_"
-            f"{from_time.strftime('%Y-%m-%d_%H-%M-%S')}_{to_time.strftime('%Y-%m-%d_%H-%M-%S')}.mp4"
+            f"{from_time.strftime('%Y-%m-%d_%H-%M-%S')}_"
+            f"{to_time.strftime('%Y-%m-%d_%H-%M-%S')}.mp4"
         )
-    
-        video_model = get_video(
-            video_id=str(generate_unique_id()),
+
+
+        # ------------------------------------------------------------------
+        # Delegate to VideoRecordingService
+        # Wall-clock timestamps come directly from the image queryset —
+        # this is the key link between real time and encoded frame index.
+        # ------------------------------------------------------------------
+        service = VideoRecordingService()
+        video_model = service.create_video_from_images(
+            images=list(images),
+            annotated_frames=annotated_frames,   # pass pre-annotated frames
+            camera=camera,
+            framerate=3,
             video_name=video_name,
-            timestamp=datetime.now(tz=timezone.utc),
             from_time=from_time,
             to_time=to_time,
-            expires_at=(datetime.now(tz=timezone.utc) + timedelta(hours=6)).replace(tzinfo=timezone.utc),
-            camera_id=camera_id,
+            tenant=tenant,
+            expires_at=(now + timedelta(hours=6)).replace(tzinfo=timezone.utc),
         )
-        
-        video_file = get_media_path(video_model, video_name)
-        if not os.path.exists(
-            os.path.dirname(
-                f"{settings.MEDIA_ROOT}/{video_file}"
-            )
-        ):
-            os.makedirs(
-                os.path.dirname(
-                    f"{settings.MEDIA_ROOT}/{video_file}"
-                )
-            )
+ 
+        if video_model is None:
+            raise ValueError("VideoRecordingService returned None — encoding failed")
+
+        # for image in images:
+
+        #     timestamp_str = image.timestamp.astimezone(tenant_tz).strftime(DATETIME_FORMAT) + f" | {entity.description}"
+        #     annotator = Annotator(
+        #             im=cv2.imread(image.image_file.path)
+        #         )
             
-        gen_video(
-            frames=frames,
-            video_path=f"{settings.MEDIA_ROOT}/{video_file}",
-            framerate=3,
-        )
+        #     bg_color = (
+        #         int(os.getenv("TIMESTAMP_BG_COLOR_R", 0)),
+        #         int(os.getenv("TIMESTAMP_BG_COLOR_G", 0)),
+        #         int(os.getenv("TIMESTAMP_BG_COLOR_B", 0)),
+        #     )
+        #     annotator.add_legendV2(
+        #             legend_text=timestamp_str, 
+        #             font=1, 
+        #             font_scale=1, 
+        #             font_thickness=1,
+        #             pos=os.getenv("TIMESTAMP_POSITION", "top-left"),
+        #             bg_color=bg_color,
+        #             alpha=os.getenv("TIMESTAMP_BG_ALPHA", 0.6),
+        #         )
+            
+        #     frames.append(
+        #         annotator.im.data
+        #     )
+        #     frame_timestamps.append(image.timestamp)
+            
+        # video_name = (
+        #     f"{tenant.tenant_name}_"
+        #     f"{entity.entity_uid}_"
+        #     f"{camera.camera_position}_"
+        #     f"{from_time.strftime('%Y-%m-%d_%H-%M-%S')}_{to_time.strftime('%Y-%m-%d_%H-%M-%S')}.mp4"
+        # )
+    
+        # video_model = get_video(
+        #     video_id=str(generate_unique_id()),
+        #     video_name=video_name,
+        #     timestamp=datetime.now(tz=timezone.utc),
+        #     from_time=from_time,
+        #     to_time=to_time,
+        #     expires_at=(datetime.now(tz=timezone.utc) + timedelta(hours=6)).replace(tzinfo=timezone.utc),
+        #     camera_id=camera_id,
+        # )
         
-        video_model.video_size = os.stat(f"{settings.MEDIA_ROOT}/{video_file}").st_size
-        h, m, s = get_video_length(path=f"{settings.MEDIA_ROOT}/{video_file}")
-        video_model.duration = timedelta(hours=h, minutes=m, seconds=s)
-        video_model.video_file = video_file
-        video_model.save()
+        # video_file = get_media_path(video_model, video_name)
+        # if not os.path.exists(
+        #     os.path.dirname(
+        #         f"{settings.MEDIA_ROOT}/{video_file}"
+        #     )
+        # ):
+        #     os.makedirs(
+        #         os.path.dirname(
+        #             f"{settings.MEDIA_ROOT}/{video_file}"
+        #         )
+        #     )
+            
+        # success, manifest = gen_video(
+        #     frames=frames,
+        #     video_path=f"{settings.MEDIA_ROOT}/{video_file}",
+        #     video_id=video_model.video_id,
+        #     frame_timestamps=frame_timestamps,
+        #     framerate=3,
+        # )
+        
+        # video_model.video_size = os.stat(f"{settings.MEDIA_ROOT}/{video_file}").st_size
+        # h, m, s = get_video_length(path=f"{settings.MEDIA_ROOT}/{video_file}")
+        # video_model.duration = timedelta(hours=h, minutes=m, seconds=s)
+        # video_model.video_file = video_file
+        # video_model.save()
         
 
-        sync(
-            url=f"http://{os.getenv('EDGE_CLOUD_SYNC_HOST', '0.0.0.0')}:{os.getenv('EDGE_CLOUD_SYNC_PORT', '27092')}/api/v1/event/media",
-            media_file=f"{video_model.video_file.path}",
-            params={   
-                'event_id': video_model.video_id,
-                'source_id': "video-archive",
-                'blob_name': os.path.basename(video_model.video_file.path),
-                'container_name': "video_archive",
-                'target': "video_archive",
-                'data': json.dumps(
-                    {
-                        "tenant_domain": tenant.domain,
-                        "location": entity.entity_uid,
-                        "sensor_box_location": camera.sensor_box.sensor_box_location,
-                        "camera_id": camera.camera_id,
-                        "video_id": video_model.video_id,
-                        "media_id": video_model.video_id,
-                        "media_name": video_model.video_name,
-                        "media_url": video_model.video_file.url,
-                        "media_type": "video",
-                        "start_time": video_model.start_time.strftime(DATETIME_FORMAT),
-                        "end_time": video_model.end_time.strftime(DATETIME_FORMAT),
-                    }
-                )
-            },
-        )
+        # sync(
+        #     url=f"http://{os.getenv('EDGE_CLOUD_SYNC_HOST', '0.0.0.0')}:{os.getenv('EDGE_CLOUD_SYNC_PORT', '27092')}/api/v1/event/media",
+        #     media_file=f"{video_model.video_file.path}",
+        #     params={   
+        #         'event_id': video_model.video_id,
+        #         'source_id': "video-archive",
+        #         'blob_name': os.path.basename(video_model.video_file.path),
+        #         'container_name': "video_archive",
+        #         'target': "video_archive",
+        #         'data': json.dumps(
+        #             {
+        #                 "tenant_domain": tenant.domain,
+        #                 "location": entity.entity_uid,
+        #                 "sensor_box_location": camera.sensor_box.sensor_box_location,
+        #                 "camera_id": camera.camera_id,
+        #                 "video_id": video_model.video_id,
+        #                 "media_id": video_model.video_id,
+        #                 "media_name": video_model.video_name,
+        #                 "media_url": video_model.video_file.url,
+        #                 "media_type": "video",
+        #                 "start_time": video_model.start_time.strftime(DATETIME_FORMAT),
+        #                 "end_time": video_model.end_time.strftime(DATETIME_FORMAT),
+        #             }
+        #         )
+        #     },
+        # )
 
         data = {
             "action": "done",

@@ -18,6 +18,7 @@ from common_utils.models.common import get_images, get_video, generate_unique_id
 from configure.client import ConfigManager
 from media.models import get_media_path
 from django.conf import settings
+from django.db import close_old_connections
 
 from common_utils.media.edge_to_cloud import sync
 from media.services.recording_service import VideoRecordingService
@@ -28,6 +29,7 @@ DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 @shared_task(bind=True,autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={"max_retries": 5}, ignore_result=True,
              name='generate_video.tasks.video.core.generate_video')
 def generate_video(self, camera_id, **kwargs):
+    close_old_connections()  # Ensure we don't have stale DB connections in the worker process
     try:
         now = datetime.now(tz=timezone.utc)
         from_time = now - timedelta(minutes=15)
@@ -233,6 +235,7 @@ def generate_video(self, camera_id, **kwargs):
 @shared_task(bind=True,autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={"max_retries": 5}, ignore_result=True,
              name='generate_video.tasks.video.core.generate_video_for_available_source')
 def generate_video_for_available_source(self, **kwargs):
+    close_old_connections()  # Ensure we don't have stale DB connections in the worker process
     try:
         active_sources = ConfigManager.get_active_data_sources()
         for source in active_sources:

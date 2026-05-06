@@ -13,6 +13,7 @@ from fastapi.exception_handlers import http_exception_handler
 from asgi_correlation_id import correlation_id
 
 from data_api.routers.video import endpoint
+from data_api.routers.health import endpoint as health_endpoint
 
 def create_app() -> FastAPI:
     tags_meta = [
@@ -46,6 +47,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(endpoint.router)
+    app.include_router(health_endpoint.router)
     
     return app
 

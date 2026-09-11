@@ -3,7 +3,7 @@ version: '3.3'
 services:
   # core
   video-buffer-core:
-    image: tannous/tannous:video-buffer-ubuntu.20.04
+    image: wadockerregistry.azurecr.io/video_archive:latest
     container_name: video-buffer-core
     stdin_open: true # docker run -i
     tty: true        # docker run -t

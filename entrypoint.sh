@@ -11,6 +11,10 @@ echo "🔍 Detecting ROS2 Topics..."
 /bin/bash -c "source /opt/ros/$ROS_DISTRO/setup.bash"
 /bin/bash -c "source /opt/ros/$ROS_DISTRO/setup.bash && python3 /home/$user/src/video_buffer/manage.py detect_ros2_topics"
 
+# 🏭 Derive tenant/plant/sensor-box/camera/data-acquisition config from environment
+echo "🏭 Setting up edge box from environment..."
+/bin/bash -c "python3 /home/$user/src/video_buffer/manage.py setup_edge_box"
+
 echo "🚀 Starting Supervisor (Django will be available)..."
 sudo -E supervisord -c /etc/supervisord.conf &
 
